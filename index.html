@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Card</title>
+    <link rel="icon" type="image/jpg" href="assets/logo.jpg" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        /* Define widths for transitions */
+        .sidebar-expanded { width: 16rem; } /* md:w-64 */
+        .sidebar-collapsed { width: 4rem; } /* md:w-16 */
+
+        /* Card Aspect Ratio (2:3) Container Trick */
+        .card-ratio-container {
+            /* Width is 100% of grid cell, Height is 150% of Width */
+            padding-bottom: 150%; 
+            position: relative;
+        }
+
+        .card-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* --- Dark Mode and Background Colors --- */
+        body {
+            background-color: gray; /* Light Gray-50 */
+        }
+        .dark {
+            background-color: white; /* Dark Gray-900 */
+            color: #f3f4f6;
+        }
+        .dark .bg-white {
+            background-color: white; /* Dark Gray-800 for content boxes */
+        }
+        .dark .text-gray-900 {
+            color: #f3f4f6;
+        }
+        .dark input, .dark textarea {
+            background-color: #374151;
+            border-color: #4b5563;
+            color: #f3f4f6;
+        }
+        
+        /* Hide photo input when editing */
+        .editing .photo-input {
+            display: none;
+        }
+
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+</head>
+<body class="font-sans min-h-screen transition-colors duration-300">
+
+    <div id="sidebar" class="fixed top-0 left-0 h-full bg-white shadow-xl flex flex-col justify-between transition-all duration-300 z-50 transform sidebar-collapsed md:sidebar-collapsed group">
+        
+        <nav class="flex flex-col p-2 space-y-2 mt-2">
+            <button id="toggleSidebar" class="p-3 text-gray-500 hover:text-indigo-600 rounded-lg md:hidden">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+            
+            <a href="#" id="homeButton" class="flex items-center p-3 text-gray-700 hover:bg-indigo-500 hover:text-white rounded-xl transition duration-150" onclick="showView('home'); return false;">
+                <i class="fas fa-home text-xl w-8 text-center"></i>
+                <span class="ml-4 font-medium whitespace-nowrap opacity-0 group-[.expanded]:opacity-100 transition-opacity duration-300 md:opacity-100 md:group-[.expanded]:opacity-100">Home</span>
+            </a>
+            
+            <button id="createCardButton" class="flex items-center p-3 text-gray-700 hover:bg-indigo-500 hover:text-white rounded-xl transition duration-150" onclick="openCreateModal();">
+                <i class="fas fa-plus-circle text-xl w-8 text-center"></i>
+                <span class="ml-4 font-medium whitespace-nowrap opacity-0 group-[.expanded]:opacity-100 transition-opacity duration-300 md:opacity-100 md:group-[.expanded]:opacity-100">Create New</span>
+            </button>
+            <a href="#" id="trashButton" class="flex items-center p-3 text-gray-700 hover:bg-red-500 hover:text-white rounded-xl transition duration-150" onclick="showView('trash'); return false;">
+                <i class="fas fa-trash text-xl w-8 text-center"></i>
+                <span class="ml-4 font-medium whitespace-nowrap opacity-0 group-[.expanded]:opacity-100 transition-opacity duration-300 md:opacity-100 md:group-[.expanded]:opacity-100">Trash Bin</span>
+            </a>
+
+        </nav>
+
+        <div class="p-4">
+             <button id="darkModeToggle" class="flex items-center w-full p-3 text-gray-700 hover:bg-indigo-500 hover:text-white rounded-xl transition duration-150">
+                <i class="fas fa-moon text-xl w-8 text-center"></i>
+                <span class="ml-4 font-medium whitespace-nowrap opacity-0 group-[.expanded]:opacity-100 transition-opacity duration-300 md:opacity-100 md:group-[.expanded]:opacity-100">Dark Mode</span>
+            </button>
+        </div>
+    </div>
+
+    <main id="main-container" class="transition-all duration-300 min-h-screen p-6 w-full ml-16 md:ml-16 bg-gray-100 dark:bg-gray-900">
+
+        <section id="home-view" class="view">
+            <h1 class="text-3xl font-extrabold mb-8 text-gray-900 dark:text-gray-100 transition-colors">My Contact Cards</h1>
+            <div id="card-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                </div>
+        </section>
+
+        <section id="trash-view" class="view hidden">
+            <h1 class="text-3xl font-extrabold mb-8 text-gray-900 dark:text-gray-100">Trash Bin</h1>
+            <div id="trash-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+        </section>
+
+
+        <div id="cardModal" class="fixed inset-0 bg-black bg-opacity-50 z-[100] hidden items-center justify-center p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                <div class="p-6 sm:p-10">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 id="modalTitle" class="text-2xl font-bold text-gray-900 dark:text-gray-100">Card Form</h2>
+                        <button id="closeModal" class="text-gray-500 hover:text-gray-900 dark:hover:text-gray-100 transition">
+                            <i class="fas fa-times text-2xl"></i>
+                        </button>
+                    </div>
+
+                    <form id="newCardForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <input type="hidden" id="cardId" name="cardId"> 
+
+                        <div class="md:col-span-2 photo-input">
+                            <label for="cardPhoto" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Photo (Upload New)</label>
+                            <input type="file" id="cardPhoto" name="cardPhoto" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition duration-150">
+                        </div>
+
+                        <div>
+                            <label for="cardName" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
+                            <input type="text" id="cardName" name="cardName" class="mt-1 block w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:focus:ring-indigo-600 dark:focus:border-indigo-600">
+                        </div>
+
+                        <div>
+                            <label for="cardProfession" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Profession</label>
+                            <input type="text" id="cardProfession" name="cardProfession" class="mt-1 block w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:focus:ring-indigo-600 dark:focus:border-indigo-600">
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label for="cardDescription" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+                            <textarea id="cardDescription" name="cardDescription" rows="3" class="mt-1 block w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:focus:ring-indigo-600 dark:focus:border-indigo-600"></textarea>
+                        </div>
+
+                        <div>
+                            <label for="cardPhone1" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Phone Number 1</label>
+                            <input type="tel" id="cardPhone1" name="cardPhone1" class="mt-1 block w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:focus:ring-indigo-600 dark:focus:border-indigo-600">
+                        </div>
+                        <div>
+                            <label for="cardPhone2" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Phone Number 2 (Optional)</label>
+                            <input type="tel" id="cardPhone2" name="cardPhone2" class="mt-1 block w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:focus:ring-indigo-600 dark:focus:border-indigo-600">
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label for="cardEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email ID</label>
+                            <input type="email" id="cardEmail" name="cardEmail" class="mt-1 block w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:focus:ring-indigo-600 dark:focus:border-indigo-600">
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label for="cardAddress" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Address</label>
+                            <input type="text" id="cardAddress" name="cardAddress" class="mt-1 block w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:focus:ring-indigo-600 dark:focus:border-indigo-600">
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label for="cardRelations" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Relations/Notes</label>
+                            <textarea id="cardRelations" name="cardRelations" rows="3" class="mt-1 block w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:focus:ring-indigo-600 dark:focus:border-indigo-600"></textarea>
+                        </div>
+
+                        <div class="md:col-span-2 mt-4">
+                            <button type="submit" id="saveButton" class="w-full inline-flex justify-center py-3 px-6 border border-transparent shadow-sm text-base font-medium rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150">
+                                Save Card
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+<script>
+    // --- Configuration and State ---
+    const STORAGE_KEY = 'digitalBusinessCards';
+    const TRASH_KEY = 'digitalBusinessCardsTrash'; // Consolidated TRASH_KEY here
+    let isSidebarExpanded = false;
+    let isDarkMode = false;
+    
+    // --- DOM Elements ---
+    const html = document.documentElement;
+    const sidebar = document.getElementById('sidebar');
+    const mainContainer = document.getElementById('main-container');
+    const toggleSidebarBtn = document.getElementById('toggleSidebar');
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const cardGrid = document.getElementById('card-grid');
+    const cardModal = document.getElementById('cardModal');
+    const closeModalBtn = document.getElementById('closeModal');
+    const newCardForm = document.getElementById('newCardForm');
+    const modalTitle = document.getElementById('modalTitle');
+    const cardIdInput = document.getElementById('cardId');
+    const photoInput = document.getElementById('cardPhoto');
+    const photoInputDiv = document.querySelector('.photo-input');
+
+    // --- Utility and Storage Functions ---
+
+    function getCards() {
+        try {
+            const cardsJson = localStorage.getItem(STORAGE_KEY);
+            return cardsJson ? JSON.parse(cardsJson) : [];
+        } catch (e) {
+            console.error("Error reading from localStorage:", e);
+            return [];
+        }
+    }
+
+    function saveCards(cards) {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+        } catch (e) {
+            console.error("Error writing to localStorage:", e);
+        }
+    }
+    
+    function getTrash() {
+        const trashJson = localStorage.getItem(TRASH_KEY);
+        return trashJson ? JSON.parse(trashJson) : [];
+    }
+
+    function saveTrash(trash) {
+        localStorage.setItem(TRASH_KEY, JSON.stringify(trash));
+    }
+
+    // --- View and Sidebar Management ---
+
+    /**
+     * Toggles the main view and triggers rendering for the current view.
+     * @param {string} viewId The ID of the view to show ('home' or 'trash').
+     */
+    function showView(viewId) {
+        // Hide all views first
+        document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+        
+        // Show the target view
+        const targetView = document.getElementById(`${viewId}-view`);
+        if (targetView) {
+            targetView.classList.remove('hidden');
+        }
+        
+        // Render content
+        if (viewId === 'home') {
+            renderCards();
+        } else if (viewId === 'trash') {
+            renderTrashCards();
+        }
+    }
+
+    function setSidebarState(expanded) {
+        isSidebarExpanded = expanded;
+        if (expanded) {
+            sidebar.classList.remove('sidebar-collapsed');
+            sidebar.classList.add('sidebar-expanded', 'expanded');
+            mainContainer.classList.remove('md:ml-16');
+            mainContainer.classList.add('md:ml-64');
+        } else {
+            sidebar.classList.remove('sidebar-expanded', 'expanded');
+            sidebar.classList.add('sidebar-collapsed');
+            mainContainer.classList.remove('md:ml-64');
+            mainContainer.classList.add('md:ml-16');
+        }
+    }
+
+    function initializeSidebar() {
+        if (window.innerWidth < 768) {
+            setSidebarState(false);
+        } else {
+            setSidebarState(true);
+        }
+    }
+
+    function updateDarkModeUI() {
+        const icon = darkModeToggle.querySelector('i');
+        const text = darkModeToggle.querySelector('span');
+        
+        if (isDarkMode) {
+            html.classList.add('dark');
+            localStorage.setItem('darkMode', 'true');
+            icon.className = 'fas fa-sun text-xl w-8 text-center';
+            text.textContent = 'Light Mode';
+        } else {
+            html.classList.remove('dark');
+            localStorage.setItem('darkMode', 'false');
+            icon.className = 'fas fa-moon text-xl w-8 text-center';
+            text.textContent = 'Dark Mode';
+        }
+    }
+
+    // --- Card Actions (Global access required for inline onclick) ---
+
+    /** Opens the modal for creating a new card. */
+    function openCreateModal() {
+        modalTitle.textContent = 'Create New Card';
+        newCardForm.reset();
+        cardIdInput.value = '';
+        photoInputDiv.classList.remove('editing'); // Ensure photo input is visible for creation
+
+        cardModal.classList.add('flex');
+        cardModal.classList.remove('hidden');
+    }
+
+    /** Closes the card creation/edit modal. */
+    function closeModal() {
+        cardModal.classList.add('hidden');
+        cardModal.classList.remove('flex');
+        newCardForm.reset();
+        cardIdInput.value = '';
+        photoInputDiv.classList.remove('editing');
+    }
+    
+    /**
+     * Deletes a card by its ID after confirmation (moves to trash).
+     * @param {number} id The ID of the card to delete.
+     */
+    function deleteCard(id) {
+        if (!confirm('Move this card to Trash Bin?')) return;
+        let cards = getCards();
+        const cardToTrash = cards.find(c => c.id === id);
+        if (!cardToTrash) return;
+
+        let trash = getTrash();
+        trash.push(cardToTrash);
+        saveTrash(trash);
+
+        cards = cards.filter(c => c.id !== id);
+        saveCards(cards);
+        renderCards();
+    }
+
+    /**
+     * Opens the modal for editing an existing card.
+     * @param {number} id The ID of the card to edit.
+     */
+    function openEditModal(id) {
+        const cards = getCards();
+        const cardToEdit = cards.find(card => card.id === id);
+
+        if (!cardToEdit) return;
+
+        modalTitle.textContent = 'Edit Card';
+        
+        // Populate form fields
+        for (const key in cardToEdit) {
+            const input = document.getElementById(`card${key.charAt(0).toUpperCase() + key.slice(1)}`);
+            if (input) {
+                input.value = cardToEdit[key];
+            }
+        }
+        
+        // Set hidden ID field and apply editing class
+        cardIdInput.value = cardToEdit.id;
+        photoInputDiv.classList.add('editing');
+
+        cardModal.classList.add('flex');
+        cardModal.classList.remove('hidden');
+    }
+
+    /**
+     * Exports a card element as a PNG image using html2canvas.
+     * @param {number} cardId The ID of the card element (used to find the DOM element).
+     * @param {string} name The name for the downloaded file.
+     */
+    async function exportCardAsImage(cardId, name) {
+        const cardElement = document.getElementById(`card-${cardId}`);
+        if (!cardElement) return;
+
+        // Visual feedback during export
+        cardElement.classList.add('ring-4', 'ring-indigo-500', 'ring-opacity-50');
+
+        try {
+            const canvas = await html2canvas(cardElement, {
+                useCORS: true, 
+                backgroundColor: null,
+                scale: 2 
+            });
+
+            // Convert canvas to blob and trigger download
+            canvas.toBlob(function(blob) {
+                const link = document.createElement('a');
+                link.download = `${name.replace(/\s/g, '_')}_card.png`;
+                link.href = URL.createObjectURL(blob);
+                link.click();
+                URL.revokeObjectURL(link.href);
+            }, 'image/png');
+
+        } catch (error) {
+            console.error("Error exporting card:", error);
+        } finally {
+            // Remove visual feedback
+            cardElement.classList.remove('ring-4', 'ring-indigo-500', 'ring-opacity-50');
+        }
+    }
+
+    function restoreCard(id) {
+        let trash = getTrash();
+        const card = trash.find(c => c.id === id);
+        if (!card) return;
+
+        let cards = getCards();
+        cards.push(card);
+        saveCards(cards);
+
+        trash = trash.filter(c => c.id !== id);
+        saveTrash(trash);
+
+        renderTrashCards();
+    }
+
+    function permanentDelete(id) {
+        if (!confirm('Permanently delete this card?')) return;
+        let trash = getTrash().filter(c => c.id !== id);
+        saveTrash(trash);
+        renderTrashCards();
+    }
+
+    // --- Rendering Logic ---
+    
+    function createCardElement(cardData) {
+        const cardContainer = document.createElement('div');
+        cardContainer.className = 'card-ratio-container';
+
+        const cardContent = document.createElement('div');
+        cardContent.className = 'card-content bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-200 dark:border-gray-700 dark:bg-gray-800 p-4 flex flex-col justify-start items-center text-center';
+        cardContent.id = `card-${cardData.id}`;
+        
+        // Photo Container (Circular)
+        const photoDiv = document.createElement('div');
+        photoDiv.className = 'w-24 h-24 sm:w-32 sm:h-32 mb-3 rounded-full overflow-hidden border-4 border-indigo-500 shadow-md flex-shrink-0';
+        const photo = document.createElement('img');
+        photo.src = cardData.photoUrl;
+        photo.alt = `Photo of ${cardData.name}`;
+        photo.className = 'w-full h-full object-cover';
+        photo.onerror = function() {
+            photo.src = 'https://placehold.co/100x100/4F46E5/FFFFFF?text=P'; 
+            photo.alt = 'Image Placeholder';
+        }
+        photoDiv.appendChild(photo);
+        cardContent.appendChild(photoDiv);
+
+        // Name and Profession (Title: Value format)
+        cardContent.innerHTML += `
+            <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 w-full px-2 mt-1">Name: <span class="text-lg font-bold text-indigo-600 dark:text-indigo-400">${cardData.name}</span></p>
+            <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 italic mb-3">Profession: <span class="text-base text-gray-500 dark:text-gray-400">${cardData.profession}</span></p>
+        `;
+
+        // Description
+        const descEl = document.createElement('p');
+        descEl.className = 'text-xs text-gray-700 dark:text-gray-300 mb-3 overflow-hidden h-8';
+        descEl.textContent = cardData.description;
+        cardContent.appendChild(descEl);
+
+        // Details (Contact Info)
+        const detailsDiv = document.createElement('div');
+        detailsDiv.className = 'mt-auto pt-3 border-t border-gray-100 dark:border-gray-700 w-full space-y-1 text-left';
+        
+        detailsDiv.innerHTML = `
+            <p class="text-xs text-gray-600 dark:text-gray-400 flex items-center"><i class="fas fa-phone mr-2 text-indigo-500 w-3"></i> ${cardData.phone1}</p>
+            ${cardData.phone2 && cardData.phone2 !== 'N/A' ? `<p class="text-xs text-gray-600 dark:text-gray-400 flex items-center"><i class="fas fa-phone mr-2 text-indigo-500 w-3"></i> ${cardData.phone2}</p>` : ''}
+            <p class="text-xs text-gray-600 dark:text-gray-400 flex items-center"><i class="fas fa-envelope mr-2 text-indigo-500 w-3"></i> ${cardData.email}</p>
+            <p class="text-xs text-gray-600 dark:text-gray-400 flex items-center"><i class="fas fa-map-marker-alt mr-2 text-indigo-500 w-3"></i> ${cardData.address}</p>
+        `;
+        cardContent.appendChild(detailsDiv);
+
+        // Action Buttons
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'absolute top-2 right-2 flex space-x-1 p-1 bg-white dark:bg-gray-800 rounded-lg shadow-md';
+        
+        // Share Button
+        const shareBtn = document.createElement('button');
+        shareBtn.innerHTML = '<i class="fas fa-share-alt"></i>';
+        shareBtn.className = 'text-sm p-1 text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200 transition';
+        shareBtn.title = 'Export as Image (PNG)';
+        shareBtn.onclick = () => exportCardAsImage(cardData.id, cardData.name);
+        actionsDiv.appendChild(shareBtn);
+        
+        // Edit Button
+        const editBtn = document.createElement('button');
+        editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+        editBtn.className = 'text-sm p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 transition';
+        editBtn.title = 'Edit Card';
+        editBtn.onclick = () => openEditModal(cardData.id);
+        actionsDiv.appendChild(editBtn);
+
+        // Delete Button
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+        deleteBtn.className = 'text-sm p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200 transition';
+        deleteBtn.title = 'Delete Card';
+        deleteBtn.onclick = () => deleteCard(cardData.id);
+        actionsDiv.appendChild(deleteBtn);
+
+        cardContent.appendChild(actionsDiv);
+        cardContainer.appendChild(cardContent);
+        return cardContainer;
+    }
+
+    function renderCards() {
+        cardGrid.innerHTML = '';
+        const cards = getCards();
+        
+        if (cards.length === 0) {
+            cardGrid.innerHTML = '<p class="col-span-full text-center text-lg text-gray-500 dark:text-gray-400 p-10 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">No cards found! Click "Create New" to add your first card.</p>';
+            return;
+        }
+
+        cards.forEach(card => {
+            cardGrid.appendChild(createCardElement(card));
+        });
+    }
+
+    function renderTrashCards() {
+        const trashGrid = document.getElementById('trash-grid');
+        trashGrid.innerHTML = '';
+        const trash = getTrash();
+        
+        if (trash.length === 0) {
+            trashGrid.innerHTML = '<p class="text-gray-500 text-center col-span-full p-10 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">Trash is empty.</p>';
+            return;
+        }
+
+        trash.forEach(card => {
+            const div = document.createElement('div');
+            div.className = 'bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 flex flex-col items-center text-center';
+            div.innerHTML = `
+                <img src="${card.photoUrl}" class="w-24 h-24 rounded-full mb-3 object-cover border-4 border-red-500" alt="${card.name}" onerror="this.src='https://placehold.co/100x100/4F46E5/FFFFFF?text=P'">
+                <p class="font-bold text-gray-900 dark:text-gray-100">${card.name}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">${card.profession}</p>
+                <div class="mt-auto flex space-x-3">
+                    <button class="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition" onclick="restoreCard(${card.id})">Restore</button>
+                    <button class="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition" onclick="permanentDelete(${card.id})">Delete</button>
+                </div>
+            `;
+            trashGrid.appendChild(div);
+        });
+    }
+
+
+    // --- Event Listeners and Initialization ---
+
+    darkModeToggle.addEventListener('click', () => {
+        isDarkMode = !isDarkMode;
+        updateDarkModeUI();
+    });
+
+    toggleSidebarBtn.addEventListener('click', () => {
+        setSidebarState(!isSidebarExpanded);
+        if (window.innerWidth < 768 && isSidebarExpanded) {
+            setTimeout(() => {
+                sidebar.classList.add('expanded');
+            }, 50);
+        } else if (window.innerWidth < 768 && !isSidebarExpanded) {
+             sidebar.classList.remove('expanded');
+        }
+    });
+
+    window.addEventListener('resize', initializeSidebar);
+    closeModalBtn.addEventListener('click', closeModal);
+    window.addEventListener('click', (event) => {
+        if (event.target === cardModal) {
+            closeModal();
+        }
+    });
+
+    // --- Form Submission Logic (Create/Edit) ---
+
+    newCardForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(newCardForm);
+        const file = formData.get('cardPhoto');
+        const id = formData.get('cardId');
+        const isEditing = !!id;
+        let cards = getCards();
+        let cardData = isEditing ? cards.find(c => c.id == id) : {};
+        
+        // Default photo for new cards or if image is deleted during edit
+        const defaultPhoto = 'https://placehold.co/600x900/4F46E5/FFFFFF?text=Photo';
+
+        const finalizeCardUpdate = (photoUrl) => {
+            const newOrUpdatedCard = {
+                id: isEditing ? parseInt(id) : Date.now(),
+                photoUrl: photoUrl || (isEditing ? cardData.photoUrl : defaultPhoto), 
+                name: formData.get('cardName') || 'N/A',
+                profession: formData.get('cardProfession') || 'N/A',
+                description: formData.get('cardDescription') || 'N/A',
+                phone1: formData.get('cardPhone1') || 'N/A',
+                phone2: formData.get('cardPhone2') || 'N/A',
+                email: formData.get('cardEmail') || 'N/A',
+                address: formData.get('cardAddress') || 'N/A',
+                relations: formData.get('cardRelations') || 'N/A',
+            };
+
+            if (isEditing) {
+                const index = cards.findIndex(c => c.id === newOrUpdatedCard.id);
+                if (index !== -1) { cards[index] = newOrUpdatedCard; }
+            } else {
+                cards.push(newOrUpdatedCard);
+            }
+
+            saveCards(cards);
+            closeModal();
+            renderCards();
+        };
+
+        if (file && file.size > 0) {
+            // Photo uploaded/changed: Convert to Base64
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                finalizeCardUpdate(event.target.result);
+            };
+            reader.readAsDataURL(file);
+        } else {
+            // No photo change or new card without photo upload
+            finalizeCardUpdate(isEditing ? cardData.photoUrl : null);
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Initialize dark mode from localStorage
+        if (localStorage.getItem('darkMode') === 'true' || 
+            (!('darkMode' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            isDarkMode = true;
+        }
+        
+        initializeSidebar();
+        updateDarkModeUI();
+        showView('home'); // Initial load is always the home view
+    });
+    
+</script>
+
+</body>
+</html>
