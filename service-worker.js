@@ -6,15 +6,20 @@ const urlsToCache = [
   '/index.html',
   '/manifest.json',
   '/service-worker.js',
+  
   // Dependencies (Tailwind, Font Awesome, html2canvas)
   'https://cdn.tailwindcss.com',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css',
   'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
-  // Assets
-  '/assets/logo.jpg',
-  '/assets/logo.jpg', // PWA icons
-  '/assets/logo.jpg',
-  '/assets/maskable-icon.jpg'
+  
+  // Application Assets (favicon and PWA icons)
+  // Note: The favicon path from index.html: <link rel="icon" type="image/jpg" href="assets/logo.jpg" />
+  '/assets/logo.jpg', 
+  
+  // PWA Icons as defined in manifest.json
+  '/assets/icon-192x192.png',
+  '/assets/icon-512x512.png',
+  '/assets/icon-maskable.png' 
 ];
 
 // --- Installation Event ---
