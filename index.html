@@ -3,17 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Meta Card</title>
+    <title>Smart Card</title>
     <link rel="icon" type="image/jpg" href="assets/logo.jpg" />
-    <link rel="manifest" href="/manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- PWA Manifest Link -->
+    <link rel="manifest" href="/manifest.json">
     <style>
-        /* Define widths for transitions */
-        .sidebar-expanded { width: 16rem; } /* md:w-64 */
-        .sidebar-collapsed { width: 4rem; } /* md:w-16 */
-
         /* Card Aspect Ratio (2:3) Container Trick */
         .card-ratio-container {
             padding-bottom: 150%; 
@@ -28,14 +25,27 @@
             height: 100%;
         }
 
-        /* --- Dark Mode and Background Colors --- */
-        body {
-            background-color: #f9fafb; 
+        /* --- Color Scheme for Contrast/Quality --- */
+        /* Body and Main Container are light gray (user request) */
+        body, #main-container {
+            background-color: #f3f4f6; /* light gray */
         }
-        .dark {
+        
+        /* Dark Mode adjustments */
+        .dark body, .dark #main-container {
             background-color: #111827; 
             color: #f3f4f6;
         }
+        
+        /* Sidebar is dark gray in Light Mode for white icon contrast */
+        #sidebar {
+            background-color: #1f2937; /* Darker Gray for contrast */
+        }
+        .dark #sidebar {
+            background-color: #111827; 
+        }
+
+        /* General Dark Mode adjustments for content */
         .dark .bg-white {
             background-color: #1f2937;
         }
@@ -83,44 +93,53 @@
 </head>
 <body class="font-sans min-h-screen transition-colors duration-300">
 
-    <div id="sidebar" class="fixed top-0 left-0 h-full bg-white shadow-xl flex flex-col justify-between transition-all duration-300 z-50 transform -translate-x-full md:translate-x-0 sidebar-collapsed group">
+    <!-- External Sidebar Toggle Button (NEW POSITION) -->
+    <button id="externalToggle" class="fixed top-4 left-4 p-3 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 transition duration-300 z-50">
+        <i id="externalToggleIcon" class="fas fa-bars text-xl"></i>
+    </button>
+
+    <!-- Sidebar: Dark background, White icons/text -->
+    <div id="sidebar" class="fixed top-0 left-0 h-full shadow-xl flex flex-col justify-between transition-transform duration-300 z-40 transform -translate-x-full w-64">
         
-        <div class="flex flex-col">
-            <div class="p-2 flex justify-end">
-                <button id="toggleSidebar" class="p-3 text-gray-500 hover:text-indigo-600 rounded-lg">
-                    <i id="toggleIcon" class="fas fa-chevron-right text-xl"></i>
-                </button>
-            </div>
-            
-            <nav class="flex flex-col p-2 space-y-2">
+        <div class="flex flex-col pt-20">
+            <nav class="flex flex-col p-4 space-y-2">
                 
-                <a href="#" id="homeButton" class="flex items-center p-3 text-gray-700 hover:bg-indigo-500 hover:text-white rounded-xl transition duration-150" onclick="showView('home'); return false;">
+                <!-- Sidebar Option: Home (text-white for contrast) -->
+                <a href="#" id="homeButton" class="flex items-center p-3 text-white hover:bg-indigo-500 rounded-xl transition duration-150" onclick="showView('home'); return false;">
                     <i class="fas fa-home text-xl w-8 text-center"></i>
-                    <span class="ml-4 font-medium whitespace-nowrap opacity-0 group-[.expanded]:opacity-100 transition-opacity duration-300 md:opacity-0 md:group-[.expanded]:opacity-100">Home</span>
+                    <span class="ml-4 font-medium whitespace-nowrap">Home</span>
                 </a>
                 
-                <button id="createCardButton" class="flex items-center p-3 text-gray-700 hover:bg-indigo-500 hover:text-white rounded-xl transition duration-150" onclick="openCreateModal();">
+                <!-- Sidebar Option: Create New (text-white for contrast) -->
+                <button id="createCardButton" class="flex items-center p-3 text-white hover:bg-indigo-500 rounded-xl transition duration-150" onclick="openCreateModal();">
                     <i class="fas fa-plus-circle text-xl w-8 text-center"></i>
-                    <span class="ml-4 font-medium whitespace-nowrap opacity-0 group-[.expanded]:opacity-100 transition-opacity duration-300 md:opacity-0 md:group-[.expanded]:opacity-100">Create New</span>
+                    <span class="ml-4 font-medium whitespace-nowrap">Create New</span>
                 </button>
                 
-                <a href="#" id="trashButton" class="flex items-center p-3 text-gray-700 hover:bg-red-500 hover:hover:text-white rounded-xl transition duration-150" onclick="showView('trash'); return false;">
+                <!-- Sidebar Option: Trash Bin (text-white for contrast) -->
+                <a href="#" id="trashButton" class="flex items-center p-3 text-white hover:bg-red-500 rounded-xl transition duration-150" onclick="showView('trash'); return false;">
                     <i class="fas fa-trash text-xl w-8 text-center"></i>
-                    <span class="ml-4 font-medium whitespace-nowrap opacity-0 group-[.expanded]:opacity-100 transition-opacity duration-300 md:opacity-0 md:group-[.expanded]:opacity-100">Trash Bin</span>
+                    <span class="ml-4 font-medium whitespace-nowrap">Trash Bin</span>
                 </a>
 
             </nav>
         </div>
 
         <div class="p-4">
-             <button id="darkModeToggle" class="flex items-center w-full p-3 text-gray-700 hover:bg-indigo-500 hover:text-white rounded-xl transition duration-150">
+             <!-- Sidebar Option: Dark Mode Toggle (text-white for contrast) -->
+             <button id="darkModeToggle" class="flex items-center w-full p-3 text-white hover:bg-indigo-500 rounded-xl transition duration-150">
                 <i class="fas fa-moon text-xl w-8 text-center"></i>
-                <span class="ml-4 font-medium whitespace-nowrap opacity-0 group-[.expanded]:opacity-100 transition-opacity duration-300 md:opacity-0 md:group-[.expanded]:opacity-100">Dark Mode</span>
+                <span class="ml-4 font-medium whitespace-nowrap">Dark Mode</span>
             </button>
         </div>
     </div>
+    
+    <!-- Overlay to close sidebar on outside click -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden" onclick="setSidebarState(false)"></div>
 
-    <main id="main-container" class="transition-all duration-300 min-h-screen p-6 w-full ml-16 md:ml-16 bg-gray-100 dark:bg-gray-900">
+
+    <!-- Main container: Always 100% width, full screen experience -->
+    <main id="main-container" class="transition-all duration-300 min-h-screen p-6 w-full">
 
         <section id="home-view" class="view">
             <h1 class="text-3xl font-extrabold mb-8 text-gray-900 dark:text-gray-100 transition-colors">My Contact Cards</h1>
@@ -133,6 +152,7 @@
             <div id="trash-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
         </section>
 
+        <!-- Card Modal (omitted for brevity, assume content is the same) -->
         <div id="cardModal" class="fixed inset-0 bg-black bg-opacity-50 z-[100] hidden items-center justify-center p-4">
             <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
                 <div class="p-6 sm:p-10">
@@ -199,6 +219,7 @@
                             <label for="cardWebsiteUrl" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Website/Portfolio URL (Optional)</label>
                             <input type="url" id="cardWebsiteUrl" name="cardWebsiteUrl" placeholder="https://www.mywebsite.com" class="mt-1 block w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:focus:ring-indigo-600 dark:focus:border-indigo-600">
                         </div>
+
                         <div class="md:col-span-2">
                             <label for="cardRelations" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Relations/Notes</label>
                             <textarea id="cardRelations" name="cardRelations" rows="3" class="mt-1 block w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:focus:ring-indigo-600 dark:focus:border-indigo-600"></textarea>
@@ -228,9 +249,10 @@
     // --- DOM Elements ---
     const html = document.documentElement;
     const sidebar = document.getElementById('sidebar');
-    const mainContainer = document.getElementById('main-container');
-    const toggleSidebarBtn = document.getElementById('toggleSidebar');
-    const toggleIcon = document.getElementById('toggleIcon');
+    const mainContainer = document.getElementById('main-container'); 
+    const externalToggleBtn = document.getElementById('externalToggle');
+    const externalToggleIcon = document.getElementById('externalToggleIcon');
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
     const darkModeToggle = document.getElementById('darkModeToggle');
     const cardGrid = document.getElementById('card-grid');
     const cardModal = document.getElementById('cardModal');
@@ -240,9 +262,8 @@
     const cardIdInput = document.getElementById('cardId');
     const photoInput = document.getElementById('cardPhoto');
     const photoInputDiv = document.querySelector('.photo-input');
-
-    // --- Utility and Storage Functions ---
-
+    
+    // --- Utility and Storage Functions (Unchanged) ---
     function getCards() {
         try {
             const cardsJson = localStorage.getItem(STORAGE_KEY);
@@ -270,7 +291,7 @@
         localStorage.setItem(TRASH_KEY, JSON.stringify(trash));
     }
 
-    // --- View and Sidebar Management ---
+    // --- View and Sidebar Management (UPDATED) ---
 
     function showView(viewId) {
         document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
@@ -280,7 +301,7 @@
             targetView.classList.remove('hidden');
         }
         
-        // Collapse sidebar after menu click
+        // Auto-hide sidebar after navigation click (User Requirement)
         if (isSidebarExpanded) {
             setSidebarState(false);
         }
@@ -293,48 +314,23 @@
     }
 
     /**
-     * Toggles the sidebar state (expanded/collapsed) for both desktop and mobile.
+     * Toggles the sidebar state (expanded/collapsed).
      */
-    function setSidebarState(expanded) {
+    window.setSidebarState = function(expanded) { // Made global for onclick in overlay
         isSidebarExpanded = expanded;
         
-        // Update the icon: chevron-left (expanded), chevron-right (collapsed)
-        toggleIcon.className = expanded ? 'fas fa-chevron-left text-xl' : 'fas fa-chevron-right text-xl';
+        // Update the external toggle icon: bars (collapsed), times (expanded)
+        externalToggleIcon.className = expanded ? 'fas fa-times text-xl' : 'fas fa-bars text-xl';
         
-        if (window.innerWidth < 768) {
-            // --- Mobile Logic (Hidden/Slide-in) ---
-            if (expanded) {
-                sidebar.classList.remove('-translate-x-full');
-                sidebar.classList.add('translate-x-0', 'expanded');
-                mainContainer.classList.add('ml-64');
-            } else {
-                sidebar.classList.remove('translate-x-0', 'expanded');
-                sidebar.classList.add('-translate-x-full');
-                mainContainer.classList.remove('ml-64'); 
-            }
+        if (expanded) {
+            sidebar.classList.remove('-translate-x-full');
+            sidebar.classList.add('translate-x-0');
+            sidebarOverlay.classList.remove('hidden');
         } else {
-            // --- Desktop Logic (Collapse/Expand) ---
-            sidebar.classList.remove('-translate-x-full', 'translate-x-0'); 
-            
-            if (expanded) {
-                // Expanded State (w-64)
-                sidebar.classList.remove('sidebar-collapsed');
-                sidebar.classList.add('sidebar-expanded', 'expanded');
-                mainContainer.classList.remove('md:ml-16');
-                mainContainer.classList.add('md:ml-64');
-            } else {
-                // Collapsed State (w-16)
-                sidebar.classList.remove('sidebar-expanded', 'expanded');
-                sidebar.classList.add('sidebar-collapsed');
-                mainContainer.classList.remove('md:ml-64');
-                mainContainer.classList.add('md:ml-16');
-            }
+            sidebar.classList.remove('translate-x-0');
+            sidebar.classList.add('-translate-x-full');
+            sidebarOverlay.classList.add('hidden');
         }
-    }
-
-    function initializeSidebar() {
-        // Sidebar is collapsed/hidden by default on all views
-        setSidebarState(false); 
     }
 
     function updateDarkModeUI() {
@@ -354,7 +350,8 @@
         }
     }
 
-    // --- Card Actions (Functions exposed globally for inline HTML events) ---
+    // --- Card Actions (Updated for Auto-Hide) ---
+
     window.openCreateModal = function() {
         modalTitle.textContent = 'Create New Card';
         newCardForm.reset();
@@ -364,7 +361,7 @@
         cardModal.classList.add('flex');
         cardModal.classList.remove('hidden');
         
-        // Collapse sidebar when opening modal
+        // Auto-hide sidebar when opening modal (User Requirement)
         if (isSidebarExpanded) {
             setSidebarState(false);
         }
@@ -414,7 +411,7 @@
         cardModal.classList.add('flex');
         cardModal.classList.remove('hidden');
         
-        // Collapse sidebar when opening modal
+        // Auto-hide sidebar when opening modal (User Requirement)
         if (isSidebarExpanded) {
             setSidebarState(false);
         }
@@ -472,7 +469,7 @@
     
     window.showView = showView; 
     
-    // --- Rendering Logic (UPDATED) ---
+    // --- Rendering Logic (Unchanged) ---
     function createCardElement(cardData) {
         const cardContainer = document.createElement('div');
         cardContainer.className = 'card-ratio-container';
@@ -624,7 +621,7 @@
         });
     }
 
-    // --- Form Submission Logic (UPDATED) ---
+    // --- Form Submission Logic (Unchanged) ---
 
     newCardForm.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -649,11 +646,9 @@
                 phone2: formData.get('cardPhone2') || 'N/A',
                 email: formData.get('cardEmail') || 'N/A',
                 address: formData.get('cardAddress') || 'N/A',
-                // --- NEW FIELDS ADDED HERE ---
                 instagramId: formData.get('cardInstagramId') || 'N/A',
                 linkedInUrl: formData.get('cardLinkedInUrl') || 'N/A',
                 websiteUrl: formData.get('cardWebsiteUrl') || 'N/A',
-                // -----------------------------
                 relations: formData.get('cardRelations') || 'N/A',
             };
 
@@ -680,13 +675,26 @@
         }
     });
 
-    // --- Initialization and Event Attachments ---
+    // --- Initialization and Event Attachments (Updated) ---
 
-    toggleSidebarBtn.addEventListener('click', () => {
+    // New: External toggle button listener
+    externalToggleBtn.addEventListener('click', () => {
         setSidebarState(!isSidebarExpanded);
     });
+    
+    // Auto-hide sidebar when clicking a menu item
+    document.querySelectorAll('#sidebar a, #sidebar button').forEach(el => {
+        // Prevent adding listeners to the Dark Mode toggle as it calls updateDarkModeUI, not showView
+        if (el.id !== 'darkModeToggle') {
+            el.addEventListener('click', () => {
+                 // Check for programmatic actions that don't auto-close (like createCardButton opening modal)
+                if (el.id !== 'createCardButton') {
+                    setSidebarState(false);
+                }
+            });
+        }
+    });
 
-    window.addEventListener('resize', initializeSidebar);
     closeModalBtn.addEventListener('click', closeModal);
     window.addEventListener('click', (event) => {
         if (event.target === cardModal) {
@@ -698,7 +706,22 @@
     darkModeToggle.addEventListener('click', () => {
         isDarkMode = !isDarkMode;
         updateDarkModeUI();
+        setSidebarState(false); // Auto-hide after toggling mode
     });
+
+    // --- PWA Service Worker Registration ---
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(registration => {
+                    console.log('SW registered:', registration);
+                })
+                .catch(error => {
+                    console.log('SW registration failed:', error);
+                });
+        });
+    }
+    // ---------------------------------------
 
     document.addEventListener('DOMContentLoaded', () => {
         // Initialize dark mode from localStorage
@@ -707,22 +730,12 @@
             isDarkMode = true;
         }
         
-        initializeSidebar();
+        // Initial state is hidden (User Requirement)
+        setSidebarState(false); 
         updateDarkModeUI();
         showView('home'); 
     });
-    // --- PWA Service Worker Registration ---
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js')
-            .then(registration => {
-                console.log('SW registered:', registration);
-            })
-            .catch(error => {
-                console.log('SW registration failed:', error);
-            });
-    });
-}
+    
 })(); 
 </script>
 
