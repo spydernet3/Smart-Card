@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Smart Card</title>
+    <title>Meta Card</title>
     <link rel="icon" type="image/jpg" href="assets/logo.jpg" />
+    <link rel="manifest" href="/manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -15,7 +16,6 @@
 
         /* Card Aspect Ratio (2:3) Container Trick */
         .card-ratio-container {
-            /* Width is 100% of grid cell, Height is 150% of Width */
             padding-bottom: 150%; 
             position: relative;
         }
@@ -30,14 +30,14 @@
 
         /* --- Dark Mode and Background Colors --- */
         body {
-            background-color: #ffffff; /* Light Gray-50 */
+            background-color: #f9fafb; 
         }
         .dark {
-            background-color: #111827; /* Dark Gray-900 */
+            background-color: #111827; 
             color: #f3f4f6;
         }
         .dark .bg-white {
-            background-color: #1f2937; /* Dark Gray-800 for content boxes */
+            background-color: #1f2937;
         }
         .dark .text-gray-900 {
             color: #f3f4f6;
@@ -52,7 +52,22 @@
         .editing .photo-input {
             display: none;
         }
-
+        
+        /* 🎨 Custom Scrollbar CSS 🎨 */
+        *::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        *::-webkit-scrollbar-corner {
+            background: rgba(0, 0, 0, 0);
+        }
+        *::-webkit-scrollbar-thumb {
+            background: rgb(153, 153, 153);
+            border-radius: 4px;
+        }
+        *::-webkit-scrollbar-thumb:hover {
+            background: rgb(100, 100, 100);
+        }
     </style>
     <script>
         tailwind.config = {
@@ -68,33 +83,39 @@
 </head>
 <body class="font-sans min-h-screen transition-colors duration-300">
 
-    <div id="sidebar" class="fixed top-0 left-0 h-full bg-white shadow-xl flex flex-col justify-between transition-all duration-300 z-50 transform sidebar-collapsed md:sidebar-collapsed group">
+    <div id="sidebar" class="fixed top-0 left-0 h-full bg-white shadow-xl flex flex-col justify-between transition-all duration-300 z-50 transform -translate-x-full md:translate-x-0 sidebar-collapsed group">
         
-        <nav class="flex flex-col p-2 space-y-2 mt-2">
-            <button id="toggleSidebar" class="p-3 text-gray-500 hover:text-indigo-600 rounded-lg md:hidden">
-                <i class="fas fa-bars text-xl"></i>
-            </button>
+        <div class="flex flex-col">
+            <div class="p-2 flex justify-end">
+                <button id="toggleSidebar" class="p-3 text-gray-500 hover:text-indigo-600 rounded-lg">
+                    <i id="toggleIcon" class="fas fa-chevron-right text-xl"></i>
+                </button>
+            </div>
             
-            <a href="#" id="homeButton" class="flex items-center p-3 text-gray-700 hover:bg-indigo-500 hover:text-white rounded-xl transition duration-150" onclick="showView('home'); return false;">
-                <i class="fas fa-home text-xl w-8 text-center"></i>
-                <span class="ml-4 font-medium whitespace-nowrap opacity-0 group-[.expanded]:opacity-100 transition-opacity duration-300 md:opacity-100 md:group-[.expanded]:opacity-100">Home</span>
-            </a>
-            
-            <button id="createCardButton" class="flex items-center p-3 text-gray-700 hover:bg-indigo-500 hover:text-white rounded-xl transition duration-150" onclick="openCreateModal();">
-                <i class="fas fa-plus-circle text-xl w-8 text-center"></i>
-                <span class="ml-4 font-medium whitespace-nowrap opacity-0 group-[.expanded]:opacity-100 transition-opacity duration-300 md:opacity-100 md:group-[.expanded]:opacity-100">Create New</span>
-            </button>
-            <a href="#" id="trashButton" class="flex items-center p-3 text-gray-700 hover:bg-red-500 hover:text-white rounded-xl transition duration-150" onclick="showView('trash'); return false;">
-                <i class="fas fa-trash text-xl w-8 text-center"></i>
-                <span class="ml-4 font-medium whitespace-nowrap opacity-0 group-[.expanded]:opacity-100 transition-opacity duration-300 md:opacity-100 md:group-[.expanded]:opacity-100">Trash Bin</span>
-            </a>
+            <nav class="flex flex-col p-2 space-y-2">
+                
+                <a href="#" id="homeButton" class="flex items-center p-3 text-gray-700 hover:bg-indigo-500 hover:text-white rounded-xl transition duration-150" onclick="showView('home'); return false;">
+                    <i class="fas fa-home text-xl w-8 text-center"></i>
+                    <span class="ml-4 font-medium whitespace-nowrap opacity-0 group-[.expanded]:opacity-100 transition-opacity duration-300 md:opacity-0 md:group-[.expanded]:opacity-100">Home</span>
+                </a>
+                
+                <button id="createCardButton" class="flex items-center p-3 text-gray-700 hover:bg-indigo-500 hover:text-white rounded-xl transition duration-150" onclick="openCreateModal();">
+                    <i class="fas fa-plus-circle text-xl w-8 text-center"></i>
+                    <span class="ml-4 font-medium whitespace-nowrap opacity-0 group-[.expanded]:opacity-100 transition-opacity duration-300 md:opacity-0 md:group-[.expanded]:opacity-100">Create New</span>
+                </button>
+                
+                <a href="#" id="trashButton" class="flex items-center p-3 text-gray-700 hover:bg-red-500 hover:hover:text-white rounded-xl transition duration-150" onclick="showView('trash'); return false;">
+                    <i class="fas fa-trash text-xl w-8 text-center"></i>
+                    <span class="ml-4 font-medium whitespace-nowrap opacity-0 group-[.expanded]:opacity-100 transition-opacity duration-300 md:opacity-0 md:group-[.expanded]:opacity-100">Trash Bin</span>
+                </a>
 
-        </nav>
+            </nav>
+        </div>
 
         <div class="p-4">
              <button id="darkModeToggle" class="flex items-center w-full p-3 text-gray-700 hover:bg-indigo-500 hover:text-white rounded-xl transition duration-150">
                 <i class="fas fa-moon text-xl w-8 text-center"></i>
-                <span class="ml-4 font-medium whitespace-nowrap opacity-0 group-[.expanded]:opacity-100 transition-opacity duration-300 md:opacity-100 md:group-[.expanded]:opacity-100">Dark Mode</span>
+                <span class="ml-4 font-medium whitespace-nowrap opacity-0 group-[.expanded]:opacity-100 transition-opacity duration-300 md:opacity-0 md:group-[.expanded]:opacity-100">Dark Mode</span>
             </button>
         </div>
     </div>
@@ -111,7 +132,6 @@
             <h1 class="text-3xl font-extrabold mb-8 text-gray-900 dark:text-gray-100">Trash Bin</h1>
             <div id="trash-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
         </section>
-
 
         <div id="cardModal" class="fixed inset-0 bg-black bg-opacity-50 z-[100] hidden items-center justify-center p-4">
             <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -165,6 +185,20 @@
                             <input type="text" id="cardAddress" name="cardAddress" class="mt-1 block w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:focus:ring-indigo-600 dark:focus:border-indigo-600">
                         </div>
 
+                        <div>
+                            <label for="cardInstagramId" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Instagram ID (Optional)</label>
+                            <input type="text" id="cardInstagramId" name="cardInstagramId" placeholder="@username" class="mt-1 block w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:focus:ring-indigo-600 dark:focus:border-indigo-600">
+                        </div>
+
+                        <div>
+                            <label for="cardLinkedInUrl" class="block text-sm font-medium text-gray-700 dark:text-gray-300">LinkedIn URL (Optional)</label>
+                            <input type="url" id="cardLinkedInUrl" name="cardLinkedInUrl" placeholder="https://linkedin.com/in/..." class="mt-1 block w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:focus:ring-indigo-600 dark:focus:border-indigo-600">
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label for="cardWebsiteUrl" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Website/Portfolio URL (Optional)</label>
+                            <input type="url" id="cardWebsiteUrl" name="cardWebsiteUrl" placeholder="https://www.mywebsite.com" class="mt-1 block w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:focus:ring-indigo-600 dark:focus:border-indigo-600">
+                        </div>
                         <div class="md:col-span-2">
                             <label for="cardRelations" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Relations/Notes</label>
                             <textarea id="cardRelations" name="cardRelations" rows="3" class="mt-1 block w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:focus:ring-indigo-600 dark:focus:border-indigo-600"></textarea>
@@ -183,9 +217,11 @@
     </main>
 
 <script>
+(function() {
+    
     // --- Configuration and State ---
     const STORAGE_KEY = 'digitalBusinessCards';
-    const TRASH_KEY = 'digitalBusinessCardsTrash'; // Consolidated TRASH_KEY here
+    const TRASH_KEY = 'digitalBusinessCardsTrash';
     let isSidebarExpanded = false;
     let isDarkMode = false;
     
@@ -194,6 +230,7 @@
     const sidebar = document.getElementById('sidebar');
     const mainContainer = document.getElementById('main-container');
     const toggleSidebarBtn = document.getElementById('toggleSidebar');
+    const toggleIcon = document.getElementById('toggleIcon');
     const darkModeToggle = document.getElementById('darkModeToggle');
     const cardGrid = document.getElementById('card-grid');
     const cardModal = document.getElementById('cardModal');
@@ -235,21 +272,19 @@
 
     // --- View and Sidebar Management ---
 
-    /**
-     * Toggles the main view and triggers rendering for the current view.
-     * @param {string} viewId The ID of the view to show ('home' or 'trash').
-     */
     function showView(viewId) {
-        // Hide all views first
         document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
         
-        // Show the target view
         const targetView = document.getElementById(`${viewId}-view`);
         if (targetView) {
             targetView.classList.remove('hidden');
         }
         
-        // Render content
+        // Collapse sidebar after menu click
+        if (isSidebarExpanded) {
+            setSidebarState(false);
+        }
+        
         if (viewId === 'home') {
             renderCards();
         } else if (viewId === 'trash') {
@@ -257,27 +292,49 @@
         }
     }
 
+    /**
+     * Toggles the sidebar state (expanded/collapsed) for both desktop and mobile.
+     */
     function setSidebarState(expanded) {
         isSidebarExpanded = expanded;
-        if (expanded) {
-            sidebar.classList.remove('sidebar-collapsed');
-            sidebar.classList.add('sidebar-expanded', 'expanded');
-            mainContainer.classList.remove('md:ml-16');
-            mainContainer.classList.add('md:ml-64');
+        
+        // Update the icon: chevron-left (expanded), chevron-right (collapsed)
+        toggleIcon.className = expanded ? 'fas fa-chevron-left text-xl' : 'fas fa-chevron-right text-xl';
+        
+        if (window.innerWidth < 768) {
+            // --- Mobile Logic (Hidden/Slide-in) ---
+            if (expanded) {
+                sidebar.classList.remove('-translate-x-full');
+                sidebar.classList.add('translate-x-0', 'expanded');
+                mainContainer.classList.add('ml-64');
+            } else {
+                sidebar.classList.remove('translate-x-0', 'expanded');
+                sidebar.classList.add('-translate-x-full');
+                mainContainer.classList.remove('ml-64'); 
+            }
         } else {
-            sidebar.classList.remove('sidebar-expanded', 'expanded');
-            sidebar.classList.add('sidebar-collapsed');
-            mainContainer.classList.remove('md:ml-64');
-            mainContainer.classList.add('md:ml-16');
+            // --- Desktop Logic (Collapse/Expand) ---
+            sidebar.classList.remove('-translate-x-full', 'translate-x-0'); 
+            
+            if (expanded) {
+                // Expanded State (w-64)
+                sidebar.classList.remove('sidebar-collapsed');
+                sidebar.classList.add('sidebar-expanded', 'expanded');
+                mainContainer.classList.remove('md:ml-16');
+                mainContainer.classList.add('md:ml-64');
+            } else {
+                // Collapsed State (w-16)
+                sidebar.classList.remove('sidebar-expanded', 'expanded');
+                sidebar.classList.add('sidebar-collapsed');
+                mainContainer.classList.remove('md:ml-64');
+                mainContainer.classList.add('md:ml-16');
+            }
         }
     }
 
     function initializeSidebar() {
-        if (window.innerWidth < 768) {
-            setSidebarState(false);
-        } else {
-            setSidebarState(true);
-        }
+        // Sidebar is collapsed/hidden by default on all views
+        setSidebarState(false); 
     }
 
     function updateDarkModeUI() {
@@ -297,21 +354,23 @@
         }
     }
 
-    // --- Card Actions (Global access required for inline onclick) ---
-
-    /** Opens the modal for creating a new card. */
-    function openCreateModal() {
+    // --- Card Actions (Functions exposed globally for inline HTML events) ---
+    window.openCreateModal = function() {
         modalTitle.textContent = 'Create New Card';
         newCardForm.reset();
         cardIdInput.value = '';
-        photoInputDiv.classList.remove('editing'); // Ensure photo input is visible for creation
+        photoInputDiv.classList.remove('editing'); 
 
         cardModal.classList.add('flex');
         cardModal.classList.remove('hidden');
+        
+        // Collapse sidebar when opening modal
+        if (isSidebarExpanded) {
+            setSidebarState(false);
+        }
     }
 
-    /** Closes the card creation/edit modal. */
-    function closeModal() {
+    window.closeModal = function() {
         cardModal.classList.add('hidden');
         cardModal.classList.remove('flex');
         newCardForm.reset();
@@ -319,11 +378,7 @@
         photoInputDiv.classList.remove('editing');
     }
     
-    /**
-     * Deletes a card by its ID after confirmation (moves to trash).
-     * @param {number} id The ID of the card to delete.
-     */
-    function deleteCard(id) {
+    window.deleteCard = function(id) {
         if (!confirm('Move this card to Trash Bin?')) return;
         let cards = getCards();
         const cardToTrash = cards.find(c => c.id === id);
@@ -338,11 +393,7 @@
         renderCards();
     }
 
-    /**
-     * Opens the modal for editing an existing card.
-     * @param {number} id The ID of the card to edit.
-     */
-    function openEditModal(id) {
+    window.openEditModal = function(id) {
         const cards = getCards();
         const cardToEdit = cards.find(card => card.id === id);
 
@@ -350,7 +401,6 @@
 
         modalTitle.textContent = 'Edit Card';
         
-        // Populate form fields
         for (const key in cardToEdit) {
             const input = document.getElementById(`card${key.charAt(0).toUpperCase() + key.slice(1)}`);
             if (input) {
@@ -358,24 +408,22 @@
             }
         }
         
-        // Set hidden ID field and apply editing class
         cardIdInput.value = cardToEdit.id;
         photoInputDiv.classList.add('editing');
 
         cardModal.classList.add('flex');
         cardModal.classList.remove('hidden');
+        
+        // Collapse sidebar when opening modal
+        if (isSidebarExpanded) {
+            setSidebarState(false);
+        }
     }
 
-    /**
-     * Exports a card element as a PNG image using html2canvas.
-     * @param {number} cardId The ID of the card element (used to find the DOM element).
-     * @param {string} name The name for the downloaded file.
-     */
-    async function exportCardAsImage(cardId, name) {
+    window.exportCardAsImage = async function(cardId, name) {
         const cardElement = document.getElementById(`card-${cardId}`);
         if (!cardElement) return;
 
-        // Visual feedback during export
         cardElement.classList.add('ring-4', 'ring-indigo-500', 'ring-opacity-50');
 
         try {
@@ -385,7 +433,6 @@
                 scale: 2 
             });
 
-            // Convert canvas to blob and trigger download
             canvas.toBlob(function(blob) {
                 const link = document.createElement('a');
                 link.download = `${name.replace(/\s/g, '_')}_card.png`;
@@ -397,12 +444,11 @@
         } catch (error) {
             console.error("Error exporting card:", error);
         } finally {
-            // Remove visual feedback
             cardElement.classList.remove('ring-4', 'ring-indigo-500', 'ring-opacity-50');
         }
     }
 
-    function restoreCard(id) {
+    window.restoreCard = function(id) {
         let trash = getTrash();
         const card = trash.find(c => c.id === id);
         if (!card) return;
@@ -417,15 +463,16 @@
         renderTrashCards();
     }
 
-    function permanentDelete(id) {
+    window.permanentDelete = function(id) {
         if (!confirm('Permanently delete this card?')) return;
         let trash = getTrash().filter(c => c.id !== id);
         saveTrash(trash);
         renderTrashCards();
     }
-
-    // --- Rendering Logic ---
     
+    window.showView = showView; 
+    
+    // --- Rendering Logic (UPDATED) ---
     function createCardElement(cardData) {
         const cardContainer = document.createElement('div');
         cardContainer.className = 'card-ratio-container';
@@ -434,7 +481,6 @@
         cardContent.className = 'card-content bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-200 dark:border-gray-700 dark:bg-gray-800 p-4 flex flex-col justify-start items-center text-center';
         cardContent.id = `card-${cardData.id}`;
         
-        // Photo Container (Circular)
         const photoDiv = document.createElement('div');
         photoDiv.className = 'w-24 h-24 sm:w-32 sm:h-32 mb-3 rounded-full overflow-hidden border-4 border-indigo-500 shadow-md flex-shrink-0';
         const photo = document.createElement('img');
@@ -448,19 +494,16 @@
         photoDiv.appendChild(photo);
         cardContent.appendChild(photoDiv);
 
-        // Name and Profession (Title: Value format)
         cardContent.innerHTML += `
             <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 w-full px-2 mt-1">Name: <span class="text-lg font-bold text-indigo-600 dark:text-indigo-400">${cardData.name}</span></p>
             <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 italic mb-3">Profession: <span class="text-base text-gray-500 dark:text-gray-400">${cardData.profession}</span></p>
         `;
 
-        // Description
         const descEl = document.createElement('p');
         descEl.className = 'text-xs text-gray-700 dark:text-gray-300 mb-3 overflow-hidden h-8';
         descEl.textContent = cardData.description;
         cardContent.appendChild(descEl);
 
-        // Details (Contact Info)
         const detailsDiv = document.createElement('div');
         detailsDiv.className = 'mt-auto pt-3 border-t border-gray-100 dark:border-gray-700 w-full space-y-1 text-left';
         
@@ -472,11 +515,49 @@
         `;
         cardContent.appendChild(detailsDiv);
 
-        // Action Buttons
+        // --- NEW SOCIAL LINKS RENDERING ---
+        const socialDiv = document.createElement('div');
+        socialDiv.className = 'w-full flex justify-center space-x-4 mt-3';
+
+        // 1. Instagram Link
+        if (cardData.instagramId && cardData.instagramId !== 'N/A') {
+            const instaLink = document.createElement('a');
+            const instaUsername = cardData.instagramId.startsWith('@') ? cardData.instagramId.substring(1) : cardData.instagramId;
+            instaLink.href = `https://www.instagram.com/${instaUsername}/`;
+            instaLink.target = '_blank';
+            instaLink.innerHTML = '<i class="fab fa-instagram text-xl text-pink-600 hover:text-pink-800 transition"></i>';
+            instaLink.title = `Instagram: ${cardData.instagramId}`;
+            socialDiv.appendChild(instaLink);
+        }
+        
+        // 2. LinkedIn Link
+        if (cardData.linkedInUrl && cardData.linkedInUrl !== 'N/A') {
+            const linkedInLink = document.createElement('a');
+            linkedInLink.href = cardData.linkedInUrl;
+            linkedInLink.target = '_blank';
+            linkedInLink.innerHTML = '<i class="fab fa-linkedin text-xl text-blue-700 hover:text-blue-900 transition"></i>';
+            linkedInLink.title = `LinkedIn: ${cardData.linkedInUrl}`;
+            socialDiv.appendChild(linkedInLink);
+        }
+
+        // 3. Website Link
+        if (cardData.websiteUrl && cardData.websiteUrl !== 'N/A') {
+            const websiteLink = document.createElement('a');
+            websiteLink.href = cardData.websiteUrl;
+            websiteLink.target = '_blank';
+            websiteLink.innerHTML = '<i class="fas fa-globe text-xl text-gray-500 hover:text-gray-700 transition"></i>';
+            websiteLink.title = `Website: ${cardData.websiteUrl}`;
+            socialDiv.appendChild(websiteLink);
+        }
+
+        if (socialDiv.children.length > 0) {
+            cardContent.appendChild(socialDiv);
+        }
+        // -----------------------------------
+
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'absolute top-2 right-2 flex space-x-1 p-1 bg-white dark:bg-gray-800 rounded-lg shadow-md';
         
-        // Share Button
         const shareBtn = document.createElement('button');
         shareBtn.innerHTML = '<i class="fas fa-share-alt"></i>';
         shareBtn.className = 'text-sm p-1 text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200 transition';
@@ -484,7 +565,6 @@
         shareBtn.onclick = () => exportCardAsImage(cardData.id, cardData.name);
         actionsDiv.appendChild(shareBtn);
         
-        // Edit Button
         const editBtn = document.createElement('button');
         editBtn.innerHTML = '<i class="fas fa-edit"></i>';
         editBtn.className = 'text-sm p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 transition';
@@ -492,7 +572,6 @@
         editBtn.onclick = () => openEditModal(cardData.id);
         actionsDiv.appendChild(editBtn);
 
-        // Delete Button
         const deleteBtn = document.createElement('button');
         deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
         deleteBtn.className = 'text-sm p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200 transition';
@@ -545,34 +624,7 @@
         });
     }
 
-
-    // --- Event Listeners and Initialization ---
-
-    darkModeToggle.addEventListener('click', () => {
-        isDarkMode = !isDarkMode;
-        updateDarkModeUI();
-    });
-
-    toggleSidebarBtn.addEventListener('click', () => {
-        setSidebarState(!isSidebarExpanded);
-        if (window.innerWidth < 768 && isSidebarExpanded) {
-            setTimeout(() => {
-                sidebar.classList.add('expanded');
-            }, 50);
-        } else if (window.innerWidth < 768 && !isSidebarExpanded) {
-             sidebar.classList.remove('expanded');
-        }
-    });
-
-    window.addEventListener('resize', initializeSidebar);
-    closeModalBtn.addEventListener('click', closeModal);
-    window.addEventListener('click', (event) => {
-        if (event.target === cardModal) {
-            closeModal();
-        }
-    });
-
-    // --- Form Submission Logic (Create/Edit) ---
+    // --- Form Submission Logic (UPDATED) ---
 
     newCardForm.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -584,7 +636,6 @@
         let cards = getCards();
         let cardData = isEditing ? cards.find(c => c.id == id) : {};
         
-        // Default photo for new cards or if image is deleted during edit
         const defaultPhoto = 'https://placehold.co/600x900/4F46E5/FFFFFF?text=Photo';
 
         const finalizeCardUpdate = (photoUrl) => {
@@ -598,6 +649,11 @@
                 phone2: formData.get('cardPhone2') || 'N/A',
                 email: formData.get('cardEmail') || 'N/A',
                 address: formData.get('cardAddress') || 'N/A',
+                // --- NEW FIELDS ADDED HERE ---
+                instagramId: formData.get('cardInstagramId') || 'N/A',
+                linkedInUrl: formData.get('cardLinkedInUrl') || 'N/A',
+                websiteUrl: formData.get('cardWebsiteUrl') || 'N/A',
+                // -----------------------------
                 relations: formData.get('cardRelations') || 'N/A',
             };
 
@@ -614,16 +670,34 @@
         };
 
         if (file && file.size > 0) {
-            // Photo uploaded/changed: Convert to Base64
             const reader = new FileReader();
             reader.onload = function(event) {
                 finalizeCardUpdate(event.target.result);
             };
             reader.readAsDataURL(file);
         } else {
-            // No photo change or new card without photo upload
             finalizeCardUpdate(isEditing ? cardData.photoUrl : null);
         }
+    });
+
+    // --- Initialization and Event Attachments ---
+
+    toggleSidebarBtn.addEventListener('click', () => {
+        setSidebarState(!isSidebarExpanded);
+    });
+
+    window.addEventListener('resize', initializeSidebar);
+    closeModalBtn.addEventListener('click', closeModal);
+    window.addEventListener('click', (event) => {
+        if (event.target === cardModal) {
+            closeModal();
+        }
+    });
+
+    // Dark Mode Toggle
+    darkModeToggle.addEventListener('click', () => {
+        isDarkMode = !isDarkMode;
+        updateDarkModeUI();
     });
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -635,9 +709,21 @@
         
         initializeSidebar();
         updateDarkModeUI();
-        showView('home'); // Initial load is always the home view
+        showView('home'); 
     });
-    
+    // --- PWA Service Worker Registration ---
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+            .then(registration => {
+                console.log('SW registered:', registration);
+            })
+            .catch(error => {
+                console.log('SW registration failed:', error);
+            });
+    });
+}
+})(); 
 </script>
 
 </body>
